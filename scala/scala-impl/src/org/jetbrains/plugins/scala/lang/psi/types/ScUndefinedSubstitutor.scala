@@ -16,17 +16,17 @@ sealed trait ScUndefinedSubstitutor {
 
   def isEmpty: Boolean
 
-  def addLower(id: Long, lower: ScType,
-               additional: Boolean = false, variance: Variance = Contravariant): ScUndefinedSubstitutor
-
-  def addUpper(id: Long, upper: ScType,
-               additional: Boolean = false, variance: Variance = Covariant): ScUndefinedSubstitutor
-
-  def +(substitutor: ScUndefinedSubstitutor): ScUndefinedSubstitutor
-
   def typeParamIds: Set[Long]
 
+  def withTypeParamId(id: Long): ScUndefinedSubstitutor
+
   def removeTypeParamIds(ids: Set[Long]): ScUndefinedSubstitutor
+
+  def withLower(id: Long, lower: ScType, variance: Variance = Contravariant): ScUndefinedSubstitutor
+
+  def withUpper(id: Long, upper: ScType, variance: Variance = Covariant): ScUndefinedSubstitutor
+
+  def +(substitutor: ScUndefinedSubstitutor): ScUndefinedSubstitutor
 
   def substitutionBounds(canThrowSCE: Boolean)
                         (implicit context: ProjectContext): Option[ScUndefinedSubstitutor.SubstitutionBounds]
@@ -94,21 +94,21 @@ private final case class ScUndefinedSubstitutorImpl(upperMap: LongMap[Set[ScType
     case multi: ScMultiUndefinedSubstitutor => multi + this
   }
 
-  override def addLower(id: Long, rawLower: ScType,
-                        additional: Boolean, variance: Variance): ScUndefinedSubstitutor =
+  override def withTypeParamId(id: Long): ScUndefinedSubstitutor = copy(
+    additionalIds = additionalIds + id
+  )
+
+  override def withLower(id: Long, rawLower: ScType, variance: Variance): ScUndefinedSubstitutor =
     computeLower(variance)(rawLower).fold(this: ScUndefinedSubstitutor) { lower =>
       copy(
         lowerMap = lowerMap.update(id, lower),
-        additionalIds = additionalIds ++ id.toIterable(additional)
       )
     }
 
-  override def addUpper(id: Long, rawUpper: ScType,
-                        additional: Boolean, variance: Variance): ScUndefinedSubstitutor =
+  override def withUpper(id: Long, rawUpper: ScType, variance: Variance): ScUndefinedSubstitutor =
     computeUpper(variance)(rawUpper).fold(this: ScUndefinedSubstitutor) { upper =>
       copy(
         upperMap = upperMap.update(id, upper),
-        additionalIds = additionalIds ++ id.toIterable(additional)
       )
     }
 
@@ -261,12 +261,6 @@ private object ScUndefinedSubstitutorImpl {
     }
   }
 
-  private implicit class LongExt(val id: Long) extends AnyVal {
-
-    def toIterable(flag: Boolean): Option[Long] =
-      if (flag) Some(id) else None
-  }
-
   private def computeUpper(variance: Variance) =
     updateUpper(variance).andThen {
       unpackedType(isAny)
@@ -361,14 +355,16 @@ private final case class ScMultiUndefinedSubstitutor(impls: Set[ScUndefinedSubst
 
   override def isEmpty: Boolean = typeParamIds.isEmpty
 
-  override def addLower(id: Long, lower: ScType,
-                        additional: Boolean, variance: Variance): ScUndefinedSubstitutor = this {
-    _.addLower(id, lower, additional, variance)
+  override def withTypeParamId(id: Long): ScUndefinedSubstitutor = this {
+    _.withTypeParamId(id)
   }
 
-  override def addUpper(id: Long, upper: ScType,
-                        additional: Boolean, variance: Variance): ScUndefinedSubstitutor = this {
-    _.addUpper(id, upper, additional, variance)
+  override def withLower(id: Long, lower: ScType, variance: Variance): ScUndefinedSubstitutor = this {
+    _.withLower(id, lower, variance)
+  }
+
+  override def withUpper(id: Long, upper: ScType, variance: Variance): ScUndefinedSubstitutor = this {
+    _.withUpper(id, upper, variance)
   }
 
   override def substitutionBounds(canThrowSCE: Boolean)

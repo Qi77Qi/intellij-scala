@@ -150,8 +150,8 @@ trait ScalaConformance extends api.Conformance {
     private def addBounds(typeParameter: TypeParameter, `type`: ScType) = {
       val name = typeParameter.typeParamId
       undefinedSubst = undefinedSubst
-        .addLower(name, `type`, variance = Invariant)
-        .addUpper(name, `type`, variance = Invariant)
+        .withLower(name, `type`, variance = Invariant)
+        .withUpper(name, `type`, variance = Invariant)
     }
 
     /*
@@ -176,7 +176,7 @@ trait ScalaConformance extends api.Conformance {
 
     trait UndefinedSubstVisitor extends ScalaTypeVisitor {
       override def visitUndefinedType(u: UndefinedType) {
-        result = (true, undefinedSubst.addUpper(u.typeParameter.typeParamId, l))
+        result = (true, undefinedSubst.withUpper(u.typeParameter.typeParamId, l))
       }
     }
 
@@ -973,7 +973,7 @@ trait ScalaConformance extends api.Conformance {
             case (_: UndefinedType, UndefinedType(typeParameter, _)) =>
               (if (args1.length != args2.length) findDiffLengthArgs(l, args2.length) else Some((args1, des1))) match {
                 case Some((aArgs, aType)) =>
-                  undefinedSubst = undefinedSubst.addUpper(typeParameter.typeParamId, aType)
+                  undefinedSubst = undefinedSubst.withUpper(typeParameter.typeParamId, aType)
                   result = checkParameterizedType(typeParameter.typeParameters.map(_.psiTypeParameter).iterator, aArgs,
                     args2, undefinedSubst, visited, checkWeak)
                 case _ =>
@@ -982,7 +982,7 @@ trait ScalaConformance extends api.Conformance {
             case (UndefinedType(typeParameter, _), _) =>
               (if (args1.length != args2.length) findDiffLengthArgs(r, args1.length) else Some((args2, des2))) match {
                 case Some((aArgs, aType)) =>
-                  undefinedSubst = undefinedSubst.addLower(typeParameter.typeParamId, aType)
+                  undefinedSubst = undefinedSubst.withLower(typeParameter.typeParamId, aType)
                   result = checkParameterizedType(typeParameter.typeParameters.map(_.psiTypeParameter).iterator, args1,
                     aArgs, undefinedSubst, visited, checkWeak)
                 case _ =>
@@ -1010,7 +1010,7 @@ trait ScalaConformance extends api.Conformance {
             case (_, UndefinedType(typeParameter, _)) =>
               (if (args1.length != args2.length) findDiffLengthArgs(l, args2.length) else Some((args1, des1))) match {
                 case Some((aArgs, aType)) =>
-                  undefinedSubst = undefinedSubst.addUpper(typeParameter.typeParamId, aType)
+                  undefinedSubst = undefinedSubst.withUpper(typeParameter.typeParamId, aType)
                   result = checkParameterizedType(typeParameter.typeParameters.map(_.psiTypeParameter).iterator, aArgs,
                     args2, undefinedSubst, visited, checkWeak)
                 case _ =>
@@ -1367,9 +1367,9 @@ trait ScalaConformance extends api.Conformance {
         override def visitUndefinedType(u2: UndefinedType) {
           val name = u2.typeParameter.typeParamId
           result = (true, if (u2.level > u.level) {
-            undefinedSubst.addUpper(name, u)
+            undefinedSubst.withUpper(name, u)
           } else if (u.level > u2.level) {
-            undefinedSubst.addUpper(name, u)
+            undefinedSubst.withUpper(name, u)
           } else {
             undefinedSubst
           })
@@ -1381,9 +1381,9 @@ trait ScalaConformance extends api.Conformance {
           case lit: ScLiteralType if lit.allowWiden && !u.typeParameter.upperType.conforms(Singleton) =>
             result = conformsInner(l, lit.wideType, visited, undefinedSubst, checkWeak)
           case lit: ScLiteralType =>
-            result = (true, undefinedSubst.addLower(u.typeParameter.typeParamId, lit.blockWiden()))
+            result = (true, undefinedSubst.withLower(u.typeParameter.typeParamId, lit.blockWiden()))
           case _ =>
-            result = (true, undefinedSubst.addLower(u.typeParameter.typeParamId, r))
+            result = (true, undefinedSubst.withLower(u.typeParameter.typeParamId, r))
         }
       }
     }
@@ -1577,8 +1577,8 @@ trait ScalaConformance extends api.Conformance {
                     variance: Variance = Covariant, addUpper: Boolean = false, addLower: Boolean = false): (Boolean, ScUndefinedSubstitutor) = {
     if (!addUpper && !addLower) return (false, undefinedSubst)
     var res = undefinedSubst
-    if (addUpper) res = res.addUpper(typeParameter.typeParamId, bound, variance = variance)
-    if (addLower) res = res.addLower(typeParameter.typeParamId, bound, variance = variance)
+    if (addUpper) res = res.withUpper(typeParameter.typeParamId, bound, variance = variance)
+    if (addLower) res = res.withLower(typeParameter.typeParamId, bound, variance = variance)
     (true, res)
   }
 

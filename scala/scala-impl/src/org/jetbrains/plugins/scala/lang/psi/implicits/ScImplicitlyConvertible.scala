@@ -245,11 +245,13 @@ object ScImplicitlyConvertible {
           val typeParamId = typeParameter.typeParamId
 
           substitute(typeParameter.lowerBound).foreach { lower =>
-            uSubst = uSubst.addLower(typeParamId, lower, additional = true)
+            uSubst = uSubst.withLower(typeParamId, lower)
+              .withTypeParamId(typeParamId)
           }
 
           substitute(typeParameter.upperBound).foreach { upper =>
-            uSubst = uSubst.addUpper(typeParamId, upper, additional = true)
+            uSubst = uSubst.withUpper(typeParamId, upper)
+              .withTypeParamId(typeParamId)
           }
         }
 
